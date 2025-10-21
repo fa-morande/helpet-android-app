@@ -1,4 +1,4 @@
-package com.helpetuset
+package com.helpetuser
 
 import org.junit.Test
 
