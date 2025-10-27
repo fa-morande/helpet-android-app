@@ -1,36 +1,40 @@
 package com.helpetuser.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.helpetuser.ui.components.MascotaCard
 import com.helpetuser.ui.viewmodel.HomeViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    homeViewModel: HomeViewModel, //se agrega el parametro para el click
-    onMascotaClick: (String) -> Unit
+    homeViewModel: HomeViewModel,
+    onMascotaClick: (String) -> Unit,
+    onAddPetClick: () -> Unit
 ) {
     val uiState by homeViewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
-
+            TopAppBar(title = { Text("Mis Mascotas") })
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { onAddPetClick() }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Añadir Mascota"
+                )
+            }
         }
     ) { paddingValues ->
         Box(
@@ -44,25 +48,30 @@ fun HomeScreen(
                     CircularProgressIndicator()
                 }
                 uiState.error != null -> {
-                    Text(text = uiState.error!!)
+                    Text(
+                        text = "Error: ${uiState.error}",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(16.dp)
+                    )
                 }
                 else -> {
-                    // LazyColumn para lista en formato columna
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize().padding(16.dp),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         item {
-                            Text(text = "¡Bienvenido a Helpet!")
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Bienvenido a Helpet",
+                                style = MaterialTheme.typography.headlineSmall
+                            )
                         }
-                        //se crea la card mascota
+
                         items(uiState.mascotas) { mascotaConReserva ->
                             MascotaCard(
                                 mascota = mascotaConReserva.mascota,
                                 proximaReserva = mascotaConReserva.proximaReserva,
-                                //se le pasa el id mascota cuando hace click
-                                onClick = { onMascotaClick(mascotaConReserva.mascota.id) }
+                                onClick = { onMascotaClick(mascotaConReserva.mascota.id.toString()) }
                             )
                         }
                     }

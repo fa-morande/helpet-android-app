@@ -1,8 +1,12 @@
 package com.helpetuser.model
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "sucursales")
 data class Sucursal(
-    val id: String,
-    val veterinariaId: String,
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val veterinariaId: Int,
     val nombre: String,
     val comuna: String,
     val direccion: String,

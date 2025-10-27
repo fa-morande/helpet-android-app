@@ -1,22 +1,224 @@
 package com.helpetuser.ui.screens
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.helpetuser.model.Usuario
+import com.helpetuser.ui.navigation.Routes
+import com.helpetuser.ui.viewmodel.ProfileViewModel
 
-/**
- * Pantalla de Perfil de Usuario.
- * Por ahora, solo muestra un texto.
- */
 @Composable
-fun ProfileScreen() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+fun ProfileScreen(
+    profileViewModel: ProfileViewModel,
+    navController: NavController
+) {
+    val uiState by profileViewModel.uiState.collectAsState()
+    Scaffold { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentAlignment = Alignment.Center
+        ) {
+            when {
+                uiState.isLoading -> {
+                    CircularProgressIndicator()
+                }
+                uiState.error != null -> {
+                    Text(text = uiState.error!!)
+                }
+                uiState.usuario != null -> {
+                    ProfileContent(
+                        usuario = uiState.usuario!!,
+                        navController = navController
+                    )
+                }
+                else -> {
+                    Text(text = "No se pudo encontrar el perfil de usuario.")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileContent(
+    usuario: Usuario,
+    navController: NavController
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())//habilita scroll
+            .padding(16.dp), // Padding general
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        Text("Pantalla de Perfil")
+        ProfileHeader(usuario = usuario)
+        HighlightButtons(navController = navController)
+        ProfileMenuList(navController = navController)
+        AccountActionButtons()
+    }
+}
+
+// --------------------------------------------------------------------------
+// componentes privados
+// --------------------------------------------------------------------------
+@Composable
+private fun ProfileHeader(usuario: Usuario) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = usuario.nombre,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Icon(
+            imageVector = Icons.Default.AccountCircle,
+            contentDescription = "Avatar de Usuario",
+            modifier = Modifier.size(48.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+    }
+}
+
+@Composable
+private fun HighlightButtons(navController: NavController) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        HighlightButton(
+            text = "Historial",
+            icon = Icons.Default.History,
+            onClick = { navController.navigate(Routes.HISTORIAL) },
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HighlightButton(
+    text: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OutlinedCard(
+        modifier = modifier.height(80.dp),
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = text,
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelMedium
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProfileMenuList(navController: NavController) {
+    Column {
+        ProfileMenuItem(
+            text = "Gestionar mascotas",
+            icon = Icons.Default.Pets,
+            onClick = { navController.navigate(Routes.GESTIONAR_MASCOTAS) }
+        )
+        ProfileMenuItem(
+            text = "Promociones",
+            icon = Icons.Default.Discount,
+            onClick = { navController.navigate(Routes.PROMOTIONS_SCREEN) }
+        )
+        ProfileMenuItem(
+            text = "Quiénes somos",
+            icon = Icons.Default.Info,
+            onClick = { navController.navigate(Routes.QUIENES_SOMOS) }
+        )
+    }
+}
+
+@Composable
+private fun ProfileMenuItem(
+    text: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = text,
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f)
+        )
+        Icon(
+            imageVector = Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun AccountActionButtons() {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Button(
+            //agregar logica de eliminacion en el onClick
+            onClick = { },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.error
+            ),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Eliminar mi cuenta")
+        }
+        OutlinedButton(
+            //agregar logica de cerrar sesion en el onClick
+            onClick = { },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Cerrar Sesión")
+        }
     }
 }

@@ -1,13 +1,15 @@
 package com.helpetuser.model
 
-import java.util.Date
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 
+@Entity(tableName = "promociones_usuario")
 data class PromocionUsuario(
-    val id: String,
-    val usuarioId: String,
-    val veterinariaId: String,
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val usuarioId: Int,
+    val veterinariaId: Int,
     val titulo: String,
     val descripcion: String,
-    val fechaExpiracion: Date,
+    val fechaExpiracion: String,
     val estado: String
 )

@@ -1,15 +1,17 @@
 package com.helpetuser.model
 
-import java.util.Date
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 
+@Entity(tableName = "reservas")
 data class Reserva(
-    val id: String,
-    val usuarioId: String,
-    val mascotaId: String,
-    val sucursalId: String,
-    val servicioId: String,
-    val profesionalId: String?,
-    val fechaHora: Date,
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val usuarioId: Int,
+    val mascotaId: Int,
+    val sucursalId: Int,
+    val servicioId: Int,
+    val profesionalId: Int?,
+    val fechaHora: String,
     val estado: String,
     val comentarios: String?,
 )
