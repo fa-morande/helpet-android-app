@@ -5,7 +5,10 @@ object Routes {
     const val SUCURSAL_SCREEN = "sucursal_screen"
     const val PROFILE_SCREEN = "profile_screen"
     const val MASCOTA_DETAIL_SCREEN = "mascota_detail_screen/{mascotaId}"
+    const val WELCOME_SCREEN = "welcome_screen"
+    const val LOGIN_SCREEN = "login_screen"
 
+    const val REGISTER_SCREEN = "register_screen"
     const val AGENDAR_CITA_SCREEN = "agendar_cita/{sucursalId}"
 
     const val PROMOTIONS_SCREEN = "promociones"

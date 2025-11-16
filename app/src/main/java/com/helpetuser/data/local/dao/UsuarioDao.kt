@@ -10,9 +10,13 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface UsuarioDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(usuario: Usuario)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(usuarios: List<Usuario>)
     @Query("SELECT * FROM usuarios")
     fun getAll(): Flow<List<Usuario>>
     @Query("SELECT * FROM usuarios WHERE id = :usuarioId")
     fun getById(usuarioId: Int): Flow<Usuario>
+    @Query("SELECT * FROM usuarios WHERE correo = :email LIMIT 1")
+    fun getByEmail(email: String): Flow<Usuario?>
 }

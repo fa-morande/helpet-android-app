@@ -81,9 +81,29 @@ fun AppNavigation() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Routes.HOME_SCREEN,
+            startDestination = Routes.WELCOME_SCREEN,
             modifier = Modifier.padding(innerPadding)
         ) {
+            composable(Routes.WELCOME_SCREEN) {
+                WelcomeScreen(navController = navController)
+            }
+
+            composable(Routes.LOGIN_SCREEN) {
+                val factory = AuthViewModelFactory(usuarioDao)
+                val authViewModel: AuthViewModel = viewModel(factory = factory)
+                LoginScreen(
+                    navController = navController,
+                    viewModel = authViewModel
+                )
+            }
+            composable(Routes.REGISTER_SCREEN) {
+                val factory = AuthViewModelFactory(usuarioDao)
+                val authViewModel: AuthViewModel = viewModel(factory = factory)
+                RegistrarScreen(
+                    navController = navController,
+                    viewModel = authViewModel
+                )
+            }
 
             composable(Routes.HOME_SCREEN) {
                 val factory = HomeViewModelFactory(mascotaDao, reservaDao)
