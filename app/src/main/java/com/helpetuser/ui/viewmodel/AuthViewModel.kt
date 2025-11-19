@@ -21,7 +21,7 @@ data class AuthUiState(
 
 class AuthViewModel(
     private val usuarioDao: UsuarioDao,
-    private val sessionManager: SessionManager // Agregado
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -30,15 +30,17 @@ class AuthViewModel(
     fun login(email: String, contrasena: String) {
         viewModelScope.launch {
             _uiState.value = AuthUiState(isLoading = true)
-            // Validación simulada (esto luego será real)
             val usuario = usuarioDao.getByEmail(email).firstOrNull()
-            delay(1500)
+            delay(1000) // Simulación de carga
 
-            if (usuario != null && contrasena == "1234") {
-                sessionManager.saveUserId(usuario.id) // <-- GUARDAMOS SESIÓN
+            // --- VALIDACIÓN REAL DE CONTRASEÑA ---
+            if (usuario != null && usuario.contrasena == contrasena) {
+                sessionManager.saveUserId(usuario.id)
                 _uiState.value = AuthUiState(isLoading = false, loginSuccess = true)
+            } else if (usuario == null) {
+                _uiState.value = AuthUiState(isLoading = false, error = "El correo no está registrado")
             } else {
-                _uiState.value = AuthUiState(isLoading = false, error = "Credenciales incorrectas")
+                _uiState.value = AuthUiState(isLoading = false, error = "Contraseña incorrecta")
             }
         }
     }
@@ -54,15 +56,19 @@ class AuthViewModel(
                 return@launch
             }
 
+            // --- GUARDADO REAL CON CONTRASEÑA ---
             val nuevoUsuario = Usuario(
-                nombre = nombre, correo = email, telefono = telefono, estado = true
+                nombre = nombre,
+                correo = email,
+                telefono = telefono,
+                contrasena = password, // <--- Guardamos la contraseña ingresada
+                estado = true
             )
             usuarioDao.insert(nuevoUsuario)
 
-            // Recuperamos el usuario recién creado para obtener su ID
             val usuarioCreado = usuarioDao.getByEmail(email).firstOrNull()
             if (usuarioCreado != null) {
-                sessionManager.saveUserId(usuarioCreado.id) // <-- GUARDAMOS SESIÓN
+                sessionManager.saveUserId(usuarioCreado.id)
                 _uiState.value = AuthUiState(isLoading = false, registerSuccess = true)
             } else {
                 _uiState.value = AuthUiState(isLoading = false, error = "Error al crear usuario")
@@ -71,6 +77,6 @@ class AuthViewModel(
     }
 
     fun clearError() {
-        _uiState.value = AuthUiState() // Resetea todo el estado
+        _uiState.value = AuthUiState()
     }
 }

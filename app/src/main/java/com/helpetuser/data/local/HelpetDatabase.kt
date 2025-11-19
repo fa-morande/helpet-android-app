@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
         Veterinaria::class, Sucursal::class, Usuario::class, Mascota::class,
         Servicio::class, Profesional::class, Reserva::class, PromocionUsuario::class
     ],
-    version = 1
+    version = 2 // <--- CAMBIO A VERSIÓN 2
 )
 abstract class HelpetDatabase : RoomDatabase() {
 
@@ -39,6 +39,7 @@ abstract class HelpetDatabase : RoomDatabase() {
                     HelpetDatabase::class.java,
                     "helpet_db"
                 )
+                    .fallbackToDestructiveMigration() // <--- IMPORTANTE: Permite recrear la BD
                     .addCallback(HelpetDatabaseCallback(context))
                     .build()
                     .also { INSTANCE = it }
@@ -53,21 +54,13 @@ abstract class HelpetDatabase : RoomDatabase() {
                 super.onCreate(db)
                 INSTANCE?.let { database ->
                     CoroutineScope(Dispatchers.IO).launch {
-
-                        //N1 SIN DEPENDENCIA
                         database.veterinariaDao().insertAll(Data.getVeterinarias())
                         database.usuarioDao().insertAll(Data.getUsuarios())
                         database.servicioDao().insertAll(Data.getServicios())
-
-                        //N2 DEPENDEN DE N1
                         database.sucursalDao().insertAll(Data.getSucursales())
                         database.mascotaDao().insertAll(Data.getMascotas())
                         database.promocionUsuarioDao().insertAll(Data.getPromociones())
-
-                        //N3 DEPENDEN DE N2
                         database.profesionalDao().insertAll(Data.getProfesionales())
-
-                        //N4 DEPENDE DEL RESTO
                         database.reservaDao().insertAll(Data.getReservas())
                     }
                 }

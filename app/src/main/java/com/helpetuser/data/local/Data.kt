@@ -3,23 +3,23 @@ package com.helpetuser.data.local
 import com.helpetuser.model.*
 
 object Data {
-//------------------------------------------------------------
-// LOS DATOS FAKE SON GENERADOS ARTIFICIALMENTE
-//------------------------------------------------------------
+    // ... (Tus funciones getVeterinarias y getSucursales quedan IGUAL)
+
     fun getVeterinarias(): List<Veterinaria> {
         return listOf(
-            Veterinaria(nombre = "Clínica VetSalud", rut = "76.123.456-1", sitioWeb = "www.vetsalud.cl", logoUrl = "https://picsum.photos/200/200?random=1.webp"), // id=1
-            Veterinaria(nombre = "Doctor Pet", rut = "77.234.567-2", sitioWeb = "www.doctorpet.cl", logoUrl = "https://picsum.photos/200/200?random=2.webp"), // id=2
-            Veterinaria(nombre = "Animalia Center", rut = "78.345.678-3", sitioWeb = "www.animalia.cl", logoUrl = "https://picsum.photos/200/200?random=3.webp"), // id=3
-            Veterinaria(nombre = "Patitas Felices", rut = "79.456.789-4", sitioWeb = "www.patitasfelices.cl", logoUrl = "https://picsum.photos/200/200?random=4.webp"), // id=4
-            Veterinaria(nombre = "Mundo Animal", rut = "76.567.890-5", sitioWeb = "www.mundoanimal.cl", logoUrl = "https://picsum.photos/200/200?random=5.webp"), // id=5
-            Veterinaria(nombre = "VetExpress", rut = "77.678.901-6", sitioWeb = "www.vetexpress.cl", logoUrl = "https://picsum.photos/200/200?random=6.webp"), // id=6
-            Veterinaria(nombre = "Arca Vet", rut = "78.789.012-7", sitioWeb = "www.arcavet.cl", logoUrl = "https://picsum.photos/200/200?random=7.webp"), // id=7
-            Veterinaria(nombre = "Sanitos", rut = "79.890.123-8", sitioWeb = "www.sanitos.cl", logoUrl = "https://picsum.photos/200/200?random=8.webp"), // id=8
-            Veterinaria(nombre = "Best Friends Vet", rut = "76.901.234-9", sitioWeb = "www.bestfriends.cl", logoUrl = "https://picsum.photos/200/200?random=9.webp"), // id=9
-            Veterinaria(nombre = "Cuidado Total", rut = "77.012.345-K", sitioWeb = "www.cuidadototal.cl", logoUrl = "https://picsum.photos/200/200?random=10.webp") // id=10
+            Veterinaria(nombre = "Clínica VetSalud", rut = "76.123.456-1", sitioWeb = "www.vetsalud.cl", logoUrl = "https://picsum.photos/200/200?random=1.webp"),
+            Veterinaria(nombre = "Doctor Pet", rut = "77.234.567-2", sitioWeb = "www.doctorpet.cl", logoUrl = "https://picsum.photos/200/200?random=2.webp"),
+            Veterinaria(nombre = "Animalia Center", rut = "78.345.678-3", sitioWeb = "www.animalia.cl", logoUrl = "https://picsum.photos/200/200?random=3.webp"),
+            Veterinaria(nombre = "Patitas Felices", rut = "79.456.789-4", sitioWeb = "www.patitasfelices.cl", logoUrl = "https://picsum.photos/200/200?random=4.webp"),
+            Veterinaria(nombre = "Mundo Animal", rut = "76.567.890-5", sitioWeb = "www.mundoanimal.cl", logoUrl = "https://picsum.photos/200/200?random=5.webp"),
+            Veterinaria(nombre = "VetExpress", rut = "77.678.901-6", sitioWeb = "www.vetexpress.cl", logoUrl = "https://picsum.photos/200/200?random=6.webp"),
+            Veterinaria(nombre = "Arca Vet", rut = "78.789.012-7", sitioWeb = "www.arcavet.cl", logoUrl = "https://picsum.photos/200/200?random=7.webp"),
+            Veterinaria(nombre = "Sanitos", rut = "79.890.123-8", sitioWeb = "www.sanitos.cl", logoUrl = "https://picsum.photos/200/200?random=8.webp"),
+            Veterinaria(nombre = "Best Friends Vet", rut = "76.901.234-9", sitioWeb = "www.bestfriends.cl", logoUrl = "https://picsum.photos/200/200?random=9.webp"),
+            Veterinaria(nombre = "Cuidado Total", rut = "77.012.345-K", sitioWeb = "www.cuidadototal.cl", logoUrl = "https://picsum.photos/200/200?random=10.webp")
         )
     }
+
     fun getSucursales(): List<Sucursal> {
         return listOf(
             Sucursal(veterinariaId = 1, nombre = "VetSalud Centro", comuna = "Cerrillos", direccion = "Av. Principal 123", telefono = "+5622111111", latitud = -33.4446, longitud = -70.6506, horario = "L-V 9-18h"),
@@ -57,13 +57,21 @@ object Data {
         )
     }
 
-
+    // --- CAMBIO AQUÍ: Agregar contrasena al usuario de prueba ---
     fun getUsuarios(): List<Usuario> {
         return listOf(
-            Usuario(nombre = "Usuario de Prueba", correo = "usuario@helpet.cl", telefono = "+56912345678", foto = null, estado = true)
+            Usuario(
+                nombre = "Usuario de Prueba",
+                correo = "usuario@helpet.cl",
+                telefono = "+56912345678",
+                contrasena = "1234", // <--- Contraseña por defecto
+                foto = null,
+                estado = true
+            )
         )
     }
 
+    // ... (El resto de funciones getMascotas, getServicios, etc. quedan IGUAL)
     fun getMascotas(): List<Mascota> {
         return listOf(
             Mascota(usuarioId = 1, nombre = "Kiara", especie = "Perro", sexo = "Hembra", raza = "Mestiza", fechaNacimiento = "2018-05-10", foto = null, activo = true),
