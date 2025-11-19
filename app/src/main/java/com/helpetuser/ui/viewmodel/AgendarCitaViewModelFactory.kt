@@ -15,13 +15,13 @@ class AgendarCitaViewModelFactory(
     private val sucursalDao: SucursalDao,
     private val veterinariaDao: VeterinariaDao,
     private val sucursalId: Int,
-    private val usuarioId: Int // <-- AÑADIR
+    private val usuarioId: Int
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AgendarCitaViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
             return AgendarCitaViewModel(
-                reservaDao, mascotaDao, servicioDao, sucursalDao, veterinariaDao, sucursalId, usuarioId // <-- PASAR
+                reservaDao, mascotaDao, servicioDao, sucursalDao, veterinariaDao, sucursalId, usuarioId
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

@@ -13,34 +13,33 @@ import kotlinx.coroutines.flow.*
 
 data class ProfileUiState(
     val usuario: Usuario? = null,
-    val veterinarias: List<Veterinaria> = emptyList(),
+    val veterinariasFavoritas: List<Veterinaria> = emptyList(),
     val promociones: List<PromocionUsuario> = emptyList(),
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val error: String? = null
 )
 
 class ProfileViewModel(
     private val usuarioDao: UsuarioDao,
     private val veterinariaDao: VeterinariaDao,
     private val promocionUsuarioDao: PromocionUsuarioDao,
-    private val usuarioId: Int // ID Dinámico
+    private val usuarioId: Int
 ) : ViewModel() {
 
     private val _uiStateFlow = combine(
-        usuarioDao.getById(usuarioId), // Usar ID
+        usuarioDao.getById(usuarioId),
         veterinariaDao.getAll(),
-        promocionUsuarioDao.getByUsuarioId(usuarioId) // Usar ID
+        promocionUsuarioDao.getByUsuarioId(usuarioId)
     ) { usuario, veterinarias, promociones ->
         ProfileUiState(
             usuario = usuario,
-            veterinarias = veterinarias,
+            veterinariasFavoritas = veterinarias,
             promociones = promociones,
             isLoading = false
         )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = ProfileUiState()
-    )
+    }.catch { e ->
+        emit(ProfileUiState(isLoading = false, error = e.message))
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ProfileUiState())
 
     val uiState: StateFlow<ProfileUiState> = _uiStateFlow
 }

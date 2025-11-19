@@ -1,7 +1,5 @@
 package com.helpetuser.ui.navigation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
@@ -9,7 +7,6 @@ import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -24,7 +21,6 @@ import com.helpetuser.data.manager.SessionManager
 import com.helpetuser.ui.screens.*
 import com.helpetuser.ui.viewmodel.*
 
-// Clase para los ítems del menú inferior
 sealed class BottomNavItem(val route: String, val label: String, val icon: ImageVector) {
     object Add : BottomNavItem(Routes.SUCURSAL_SCREEN, "Veterinarias", Icons.Default.Store)
     object Home : BottomNavItem(Routes.HOME_SCREEN, "Mis Mascotas", Icons.Default.Pets)
@@ -58,7 +54,6 @@ fun AppNavigation() {
         val isAuthRoute = navController.currentBackStackEntry?.destination?.route in listOf(
             Routes.WELCOME_SCREEN, Routes.LOGIN_SCREEN, Routes.REGISTER_SCREEN
         )
-        // Si se cierra sesión y no estamos en una pantalla de auth, volver al inicio
         if (currentUserId == null && !isAuthRoute) {
             navController.navigate(Routes.WELCOME_SCREEN) {
                 popUpTo(0) { inclusive = true }
@@ -70,7 +65,6 @@ fun AppNavigation() {
         bottomBar = {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
-            // Solo mostrar barra si hay usuario logueado y es una ruta principal
             if (currentUserId != null && currentDestination?.route in bottomBarRoutes) {
                 NavigationBar {
                     val items = listOf(BottomNavItem.Add, BottomNavItem.Home, BottomNavItem.Profile)
@@ -95,7 +89,6 @@ fun AppNavigation() {
         }
     ) { innerPadding ->
 
-        // Decidir ruta inicial
         val startDestination = if (currentUserId != null) Routes.HOME_SCREEN else Routes.WELCOME_SCREEN
 
         NavHost(
@@ -103,77 +96,71 @@ fun AppNavigation() {
             startDestination = startDestination,
             modifier = Modifier.padding(innerPadding)
         ) {
-            // --- AUTENTICACIÓN ---
-            composable(Routes.WELCOME_SCREEN) { WelcomeScreen(navController) }
+            composable(Routes.WELCOME_SCREEN) {
+                WelcomeScreen(navController = navController)
+            }
 
             composable(Routes.LOGIN_SCREEN) {
+                // CORREGIDO: Se pasa sessionManager
                 val factory = AuthViewModelFactory(usuarioDao, sessionManager)
-                val vm: AuthViewModel = viewModel(factory = factory)
-                LoginScreen(navController, vm)
+                val authViewModel: AuthViewModel = viewModel(factory = factory)
+                LoginScreen(
+                    navController = navController,
+                    viewModel = authViewModel
+                )
             }
 
             composable(Routes.REGISTER_SCREEN) {
+                // CORREGIDO: Se pasa sessionManager
                 val factory = AuthViewModelFactory(usuarioDao, sessionManager)
-                val vm: AuthViewModel = viewModel(factory = factory)
-                // CORRECCIÓN: Se llama a RegistrarScreen, no RegisterScreen
-                RegistrarScreen(navController, vm)
+                val authViewModel: AuthViewModel = viewModel(factory = factory)
+                RegistrarScreen(
+                    navController = navController,
+                    viewModel = authViewModel
+                )
             }
-
-            // --- PANTALLAS PRINCIPALES (Protegidas con ID) ---
 
             composable(Routes.HOME_SCREEN) {
                 if (currentUserId != null) {
+                    // CORREGIDO: Se pasa currentUserId
                     val factory = HomeViewModelFactory(mascotaDao, reservaDao, currentUserId!!)
-                    val vm: HomeViewModel = viewModel(factory = factory)
+                    val homeViewModel: HomeViewModel = viewModel(factory = factory)
                     HomeScreen(
-                        homeViewModel = vm,
+                        homeViewModel = homeViewModel,
                         onMascotaClick = { id -> navController.navigate(Routes.createMascotaDetailRoute(id)) },
                         onAddPetClick = { navController.navigate(Routes.AGREGAR_MASCOTA_SCREEN) }
                     )
                 }
             }
 
+            composable(Routes.SUCURSAL_SCREEN) {
+                val factory = SucursalViewModelFactory(veterinariaDao, sucursalDao)
+                val sucursalViewModel: SucursalViewModel = viewModel(factory = factory)
+                SucursalScreen(navController, sucursalViewModel)
+            }
+
             composable(Routes.PROFILE_SCREEN) {
                 if (currentUserId != null) {
+                    // CORREGIDO: Se pasa currentUserId
                     val factory = ProfileViewModelFactory(usuarioDao, veterinariaDao, promocionUsuarioDao, currentUserId!!)
-                    val vm: ProfileViewModel = viewModel(factory = factory)
+                    val profileViewModel: ProfileViewModel = viewModel(factory = factory)
                     ProfileScreen(
-                        profileViewModel = vm,
+                        profileViewModel = profileViewModel,
                         navController = navController,
                         onLogoutClick = { sessionManager.logout() }
                     )
                 }
             }
 
-            composable(Routes.SUCURSAL_SCREEN) {
-                val factory = SucursalViewModelFactory(veterinariaDao, sucursalDao)
-                val vm: SucursalViewModel = viewModel(factory = factory)
-                SucursalScreen(navController, vm)
-            }
-
-            // --- PANTALLAS SECUNDARIAS ---
-
-            composable(Routes.AGREGAR_MASCOTA_SCREEN) {
-                if (currentUserId != null) {
-                    val factory = AgregarMascotaViewModelFactory(mascotaDao, currentUserId!!)
-                    val vm: AgregarMascotaViewModel = viewModel(factory = factory)
-                    AgregarMascotaScreen(navController, vm)
-                }
-            }
-
-            composable(Routes.GESTIONAR_MASCOTAS) {
-                if (currentUserId != null) {
-                    val factory = GestionarMascotasViewModelFactory(mascotaDao, currentUserId!!)
-                    val vm: GestionarMascotasViewModel = viewModel(factory = factory)
-                    GestionarMascotasScreen(navController, vm)
-                }
-            }
-
-            composable(Routes.HISTORIAL) {
-                if (currentUserId != null) {
-                    val factory = HistorialViewModelFactory(reservaDao, currentUserId!!)
-                    val vm: HistorialViewModel = viewModel(factory = factory)
-                    HistorialScreen(navController, vm)
+            composable(
+                route = Routes.MASCOTA_DETAIL_SCREEN,
+                arguments = listOf(navArgument("mascotaId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val mascotaId = backStackEntry.arguments?.getString("mascotaId")?.toIntOrNull()
+                if (mascotaId != null) {
+                    val factory = MascotaDetailViewModelFactory(mascotaDao, reservaDao, mascotaId)
+                    val viewModel: MascotaDetailViewModel = viewModel(factory = factory)
+                    MascotaDetailScreen(navController, viewModel)
                 }
             }
 
@@ -183,35 +170,57 @@ fun AppNavigation() {
             ) { backStackEntry ->
                 val sucursalId = backStackEntry.arguments?.getInt("sucursalId")
                 if (sucursalId != null && currentUserId != null) {
+                    // CORREGIDO: Se pasa currentUserId
                     val factory = AgendarCitaViewModelFactory(
                         reservaDao, mascotaDao, servicioDao, sucursalDao, veterinariaDao, sucursalId, currentUserId!!
                     )
-                    val vm: AgendarCitaViewModel = viewModel(factory = factory)
-                    AgendarCitaScreen(navController, vm, sucursalId)
-                }
-            }
-
-            composable(Routes.QUIENES_SOMOS) { QuienesSomosScreen(navController) }
-
-            composable(
-                route = Routes.MASCOTA_DETAIL_SCREEN,
-                arguments = listOf(navArgument("mascotaId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val mascotaIdString = backStackEntry.arguments?.getString("mascotaId")
-                val mascotaIdInt = mascotaIdString?.toIntOrNull()
-
-                if(mascotaIdInt != null) {
-                    val factory = MascotaDetailViewModelFactory(mascotaDao, reservaDao, mascotaIdInt)
-                    val vm: MascotaDetailViewModel = viewModel(factory = factory)
-                    MascotaDetailScreen(navController, vm)
+                    val viewModel: AgendarCitaViewModel = viewModel(factory = factory)
+                    // CORREGIDO: Se eliminó el argumento duplicado de navController
+                    AgendarCitaScreen(
+                        navController = navController,
+                        viewModel = viewModel,
+                        sucursalId = sucursalId
+                    )
                 }
             }
 
             composable(Routes.PROMOTIONS_SCREEN){
                 if (currentUserId != null) {
+                    // CORREGIDO: Se pasa currentUserId
                     val factory = ProfileViewModelFactory(usuarioDao, veterinariaDao, promocionUsuarioDao, currentUserId!!)
-                    val vm: ProfileViewModel = viewModel(factory = factory)
-                    PromocionesScreen(navController, vm)
+                    val profileViewModel: ProfileViewModel = viewModel(factory = factory)
+                    PromocionesScreen(navController, profileViewModel)
+                }
+            }
+
+            composable(Routes.QUIENES_SOMOS){
+                QuienesSomosScreen(navController = navController)
+            }
+
+            composable(Routes.GESTIONAR_MASCOTAS){
+                if (currentUserId != null) {
+                    // CORREGIDO: Se pasa currentUserId
+                    val factory = GestionarMascotasViewModelFactory(mascotaDao, currentUserId!!)
+                    val viewModel: GestionarMascotasViewModel = viewModel(factory = factory)
+                    GestionarMascotasScreen(navController, viewModel)
+                }
+            }
+
+            composable(Routes.AGREGAR_MASCOTA_SCREEN){
+                if (currentUserId != null) {
+                    // CORREGIDO: Se pasa currentUserId
+                    val factory = AgregarMascotaViewModelFactory(mascotaDao, currentUserId!!)
+                    val viewModel: AgregarMascotaViewModel = viewModel(factory = factory)
+                    AgregarMascotaScreen(navController, viewModel)
+                }
+            }
+
+            composable(Routes.HISTORIAL){
+                if (currentUserId != null) {
+                    // CORREGIDO: Se pasa currentUserId
+                    val factory = HistorialViewModelFactory(reservaDao, currentUserId!!)
+                    val viewModel: HistorialViewModel = viewModel(factory = factory)
+                    HistorialScreen(navController, viewModel)
                 }
             }
         }
