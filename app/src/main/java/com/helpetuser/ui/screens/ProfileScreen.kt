@@ -21,7 +21,8 @@ import com.helpetuser.ui.viewmodel.ProfileViewModel
 @Composable
 fun ProfileScreen(
     profileViewModel: ProfileViewModel,
-    navController: NavController
+    navController: NavController,
+    onLogoutClick: () -> Unit // <--- Nuevo parámetro recibido desde AppNavigation
 ) {
     val uiState by profileViewModel.uiState.collectAsState()
     Scaffold { paddingValues ->
@@ -35,13 +36,11 @@ fun ProfileScreen(
                 uiState.isLoading -> {
                     CircularProgressIndicator()
                 }
-                uiState.error != null -> {
-                    Text(text = uiState.error!!)
-                }
                 uiState.usuario != null -> {
                     ProfileContent(
                         usuario = uiState.usuario!!,
-                        navController = navController
+                        navController = navController,
+                        onLogoutClick = onLogoutClick // <--- Se pasa al contenido
                     )
                 }
                 else -> {
@@ -55,19 +54,20 @@ fun ProfileScreen(
 @Composable
 private fun ProfileContent(
     usuario: Usuario,
-    navController: NavController
+    navController: NavController,
+    onLogoutClick: () -> Unit // <--- Se recibe aquí
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())//habilita scroll
-            .padding(16.dp), // Padding general
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         ProfileHeader(usuario = usuario)
         HighlightButtons(navController = navController)
         ProfileMenuList(navController = navController)
-        AccountActionButtons()
+        AccountActionButtons(onLogoutClick = onLogoutClick) // <--- Se pasa a los botones
     }
 }
 
@@ -198,14 +198,15 @@ private fun ProfileMenuItem(
 }
 
 @Composable
-private fun AccountActionButtons() {
+private fun AccountActionButtons(
+    onLogoutClick: () -> Unit // <--- Recibe la acción
+) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Button(
-            //agregar logica de eliminacion en el onClick
-            onClick = { },
+            onClick = { /* Lógica de eliminar cuenta futura */ },
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.error
             ),
@@ -214,8 +215,7 @@ private fun AccountActionButtons() {
             Text("Eliminar mi cuenta")
         }
         OutlinedButton(
-            //agregar logica de cerrar sesion en el onClick
-            onClick = { },
+            onClick = { onLogoutClick() }, // <--- Ejecuta el cierre de sesión
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Cerrar Sesión")

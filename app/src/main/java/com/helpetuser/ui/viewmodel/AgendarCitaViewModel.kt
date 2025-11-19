@@ -14,6 +14,7 @@ data class AgendarCitaUiState(
     val mascotasUsuario: List<Mascota> = emptyList(),
     val serviciosDisponibles: List<Servicio> = emptyList(),
     val isLoading: Boolean = true
+
 )
 
 //para obtener datos del viewmodel
@@ -23,10 +24,10 @@ class AgendarCitaViewModel(
     private val servicioDao: ServicioDao,
     private val sucursalDao: SucursalDao,
     private val veterinariaDao: VeterinariaDao,
-    private val sucursalId: Int
+    private val sucursalId: Int,
+    private val usuarioId: Int
 ) : ViewModel() {
 
-    private val usuarioId = 1
 
 
     private val _uiStateFlow = combine(

@@ -11,9 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.helpetuser.ui.components.MascotaCard
+import com.helpetuser.ui.components.TopAppBar
 import com.helpetuser.ui.viewmodel.HomeViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     homeViewModel: HomeViewModel,
@@ -24,7 +24,12 @@ fun HomeScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Mis Mascotas") })
+            // Usamos una lambda vacía o un texto simple si tu componente TopAppBar lo requiere así
+            // Ajusta esto según tu componente TopAppBar actual
+            TopAppBar(
+                title = "Mis Mascotas",
+                onBackClicked = {} // En Home no suele haber back, o puedes ocultar el botón
+            )
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -67,11 +72,12 @@ fun HomeScreen(
                             )
                         }
 
-                        items(uiState.mascotas) { mascotaConReserva ->
+                        // Ahora uiState.mascotas es una lista de MascotaConReserva
+                        items(uiState.mascotas) { item ->
                             MascotaCard(
-                                mascota = mascotaConReserva.mascota,
-                                proximaReserva = mascotaConReserva.proximaReserva,
-                                onClick = { onMascotaClick(mascotaConReserva.mascota.id.toString()) }
+                                mascota = item.mascota,
+                                proximaReserva = item.proximaReserva,
+                                onClick = { onMascotaClick(item.mascota.id.toString()) }
                             )
                         }
                     }

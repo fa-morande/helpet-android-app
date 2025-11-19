@@ -1,13 +1,15 @@
 package com.helpetuser.ui.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -18,9 +20,11 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.helpetuser.data.local.HelpetDatabase
+import com.helpetuser.data.manager.SessionManager
 import com.helpetuser.ui.screens.*
 import com.helpetuser.ui.viewmodel.*
 
+// Clase para los ítems del menú inferior
 sealed class BottomNavItem(val route: String, val label: String, val icon: ImageVector) {
     object Add : BottomNavItem(Routes.SUCURSAL_SCREEN, "Veterinarias", Icons.Default.Store)
     object Home : BottomNavItem(Routes.HOME_SCREEN, "Mis Mascotas", Icons.Default.Pets)
@@ -30,12 +34,13 @@ sealed class BottomNavItem(val route: String, val label: String, val icon: Image
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
-    val navItems = listOf(
-        BottomNavItem.Add,
-        BottomNavItem.Home,
-        BottomNavItem.Profile)
-
     val context = LocalContext.current
+
+    // 1. Session Manager y Estado del Usuario
+    val sessionManager = remember { SessionManager(context) }
+    val currentUserId by sessionManager.userIdFlow.collectAsState()
+
+    // 2. Base de Datos y DAOs
     val database = HelpetDatabase.getDatabase(context)
     val mascotaDao = database.mascotaDao()
     val reservaDao = database.reservaDao()
@@ -45,27 +50,37 @@ fun AppNavigation() {
     val servicioDao = database.servicioDao()
     val sucursalDao = database.sucursalDao()
 
-    val bottomBarRoutes = listOf(
-        Routes.HOME_SCREEN,
-        Routes.SUCURSAL_SCREEN,
-        Routes.PROFILE_SCREEN
-    )
+    // Rutas de la BottomBar
+    val bottomBarRoutes = listOf(Routes.HOME_SCREEN, Routes.SUCURSAL_SCREEN, Routes.PROFILE_SCREEN)
+
+    // 3. Lógica de Redirección
+    LaunchedEffect(currentUserId) {
+        val isAuthRoute = navController.currentBackStackEntry?.destination?.route in listOf(
+            Routes.WELCOME_SCREEN, Routes.LOGIN_SCREEN, Routes.REGISTER_SCREEN
+        )
+        // Si se cierra sesión y no estamos en una pantalla de auth, volver al inicio
+        if (currentUserId == null && !isAuthRoute) {
+            navController.navigate(Routes.WELCOME_SCREEN) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
 
     Scaffold(
         bottomBar = {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
-            val showBottomBar = currentDestination?.route in bottomBarRoutes
-
-            if (showBottomBar) {
+            // Solo mostrar barra si hay usuario logueado y es una ruta principal
+            if (currentUserId != null && currentDestination?.route in bottomBarRoutes) {
                 NavigationBar {
-                    navItems.forEach { screen ->
+                    val items = listOf(BottomNavItem.Add, BottomNavItem.Home, BottomNavItem.Profile)
+                    items.forEach { item ->
                         NavigationBarItem(
-                            icon = { Icon(screen.icon, contentDescription = screen.label) },
-                            label = { Text(screen.label) },
-                            selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                            icon = { Icon(item.icon, contentDescription = item.label) },
+                            label = { Text(item.label) },
+                            selected = currentDestination?.hierarchy?.any { it.route == item.route } == true,
                             onClick = {
-                                navController.navigate(screen.route) {
+                                navController.navigate(item.route) {
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
@@ -79,86 +94,86 @@ fun AppNavigation() {
             }
         }
     ) { innerPadding ->
+
+        // Decidir ruta inicial
+        val startDestination = if (currentUserId != null) Routes.HOME_SCREEN else Routes.WELCOME_SCREEN
+
         NavHost(
             navController = navController,
-            startDestination = Routes.WELCOME_SCREEN,
+            startDestination = startDestination,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(Routes.WELCOME_SCREEN) {
-                WelcomeScreen(navController = navController)
-            }
+            // --- AUTENTICACIÓN ---
+            composable(Routes.WELCOME_SCREEN) { WelcomeScreen(navController) }
 
             composable(Routes.LOGIN_SCREEN) {
-                val factory = AuthViewModelFactory(usuarioDao)
-                val authViewModel: AuthViewModel = viewModel(factory = factory)
-                LoginScreen(
-                    navController = navController,
-                    viewModel = authViewModel
-                )
+                val factory = AuthViewModelFactory(usuarioDao, sessionManager)
+                val vm: AuthViewModel = viewModel(factory = factory)
+                LoginScreen(navController, vm)
             }
+
             composable(Routes.REGISTER_SCREEN) {
-                val factory = AuthViewModelFactory(usuarioDao)
-                val authViewModel: AuthViewModel = viewModel(factory = factory)
-                RegistrarScreen(
-                    navController = navController,
-                    viewModel = authViewModel
-                )
+                val factory = AuthViewModelFactory(usuarioDao, sessionManager)
+                val vm: AuthViewModel = viewModel(factory = factory)
+                // CORRECCIÓN: Se llama a RegistrarScreen, no RegisterScreen
+                RegistrarScreen(navController, vm)
             }
+
+            // --- PANTALLAS PRINCIPALES (Protegidas con ID) ---
 
             composable(Routes.HOME_SCREEN) {
-                val factory = HomeViewModelFactory(mascotaDao, reservaDao)
-                val homeViewModel: HomeViewModel = viewModel(factory = factory)
+                if (currentUserId != null) {
+                    val factory = HomeViewModelFactory(mascotaDao, reservaDao, currentUserId!!)
+                    val vm: HomeViewModel = viewModel(factory = factory)
+                    HomeScreen(
+                        homeViewModel = vm,
+                        onMascotaClick = { id -> navController.navigate(Routes.createMascotaDetailRoute(id)) },
+                        onAddPetClick = { navController.navigate(Routes.AGREGAR_MASCOTA_SCREEN) }
+                    )
+                }
+            }
 
-                HomeScreen(
-                    homeViewModel = homeViewModel,
-                    onMascotaClick = { mascotaId ->
-                        navController.navigate(Routes.createMascotaDetailRoute(mascotaId))
-                    },
-                    onAddPetClick = {
-                        navController.navigate(Routes.AGREGAR_MASCOTA_SCREEN)
-                    }
-                )
+            composable(Routes.PROFILE_SCREEN) {
+                if (currentUserId != null) {
+                    val factory = ProfileViewModelFactory(usuarioDao, veterinariaDao, promocionUsuarioDao, currentUserId!!)
+                    val vm: ProfileViewModel = viewModel(factory = factory)
+                    ProfileScreen(
+                        profileViewModel = vm,
+                        navController = navController,
+                        onLogoutClick = { sessionManager.logout() }
+                    )
+                }
             }
 
             composable(Routes.SUCURSAL_SCREEN) {
                 val factory = SucursalViewModelFactory(veterinariaDao, sucursalDao)
-                val sucursalViewModel: SucursalViewModel = viewModel(factory = factory)
-
-                SucursalScreen(
-                    navController = navController,
-                    viewModel = sucursalViewModel
-                )
+                val vm: SucursalViewModel = viewModel(factory = factory)
+                SucursalScreen(navController, vm)
             }
 
-            composable(Routes.PROFILE_SCREEN) {
-                val factory = ProfileViewModelFactory(usuarioDao, veterinariaDao, promocionUsuarioDao)
-                val profileViewModel: ProfileViewModel = viewModel(factory = factory)
+            // --- PANTALLAS SECUNDARIAS ---
 
-                ProfileScreen(
-                    profileViewModel = profileViewModel,
-                    navController = navController
-                )
+            composable(Routes.AGREGAR_MASCOTA_SCREEN) {
+                if (currentUserId != null) {
+                    val factory = AgregarMascotaViewModelFactory(mascotaDao, currentUserId!!)
+                    val vm: AgregarMascotaViewModel = viewModel(factory = factory)
+                    AgregarMascotaScreen(navController, vm)
+                }
             }
 
-            composable(
-                route = Routes.MASCOTA_DETAIL_SCREEN,
-                arguments = listOf(navArgument("mascotaId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val mascotaIdString = backStackEntry.arguments?.getString("mascotaId")
-                val mascotaIdInt = mascotaIdString?.toIntOrNull()
-                if (mascotaIdInt != null) {
-                    val factory = MascotaDetailViewModelFactory(
-                        mascotaDao,
-                        reservaDao,
-                        mascotaIdInt
-                    )
-                    val viewModel: MascotaDetailViewModel = viewModel(factory = factory)
-                    MascotaDetailScreen(
-                        navController = navController,
-                        viewModel = viewModel
-                    )
-                } else {
-                    Text("Error: ID de mascota inválido")
+            composable(Routes.GESTIONAR_MASCOTAS) {
+                if (currentUserId != null) {
+                    val factory = GestionarMascotasViewModelFactory(mascotaDao, currentUserId!!)
+                    val vm: GestionarMascotasViewModel = viewModel(factory = factory)
+                    GestionarMascotasScreen(navController, vm)
+                }
+            }
+
+            composable(Routes.HISTORIAL) {
+                if (currentUserId != null) {
+                    val factory = HistorialViewModelFactory(reservaDao, currentUserId!!)
+                    val vm: HistorialViewModel = viewModel(factory = factory)
+                    HistorialScreen(navController, vm)
                 }
             }
 
@@ -167,63 +182,37 @@ fun AppNavigation() {
                 arguments = listOf(navArgument("sucursalId") { type = NavType.IntType })
             ) { backStackEntry ->
                 val sucursalId = backStackEntry.arguments?.getInt("sucursalId")
-                if (sucursalId != null) {
+                if (sucursalId != null && currentUserId != null) {
                     val factory = AgendarCitaViewModelFactory(
-                        reservaDao,
-                        mascotaDao,
-                        servicioDao,
-                        sucursalDao,
-                        veterinariaDao,
-                        sucursalId
+                        reservaDao, mascotaDao, servicioDao, sucursalDao, veterinariaDao, sucursalId, currentUserId!!
                     )
-                    val viewModel: AgendarCitaViewModel = viewModel(factory = factory)
-                    AgendarCitaScreen(
-                        navController = navController,
-                        viewModel = viewModel,
-                        sucursalId = sucursalId
-                    )
-                } else {
-                    Text("Error: ID de sucursal inválido")
+                    val vm: AgendarCitaViewModel = viewModel(factory = factory)
+                    AgendarCitaScreen(navController, vm, sucursalId)
+                }
+            }
+
+            composable(Routes.QUIENES_SOMOS) { QuienesSomosScreen(navController) }
+
+            composable(
+                route = Routes.MASCOTA_DETAIL_SCREEN,
+                arguments = listOf(navArgument("mascotaId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val mascotaIdString = backStackEntry.arguments?.getString("mascotaId")
+                val mascotaIdInt = mascotaIdString?.toIntOrNull()
+
+                if(mascotaIdInt != null) {
+                    val factory = MascotaDetailViewModelFactory(mascotaDao, reservaDao, mascotaIdInt)
+                    val vm: MascotaDetailViewModel = viewModel(factory = factory)
+                    MascotaDetailScreen(navController, vm)
                 }
             }
 
             composable(Routes.PROMOTIONS_SCREEN){
-                val factory = ProfileViewModelFactory(usuarioDao, veterinariaDao, promocionUsuarioDao)
-                val profileViewModel: ProfileViewModel = viewModel(factory = factory)
-                PromocionesScreen(
-                    navController = navController,
-                    profileViewModel = profileViewModel
-                )
-            }
-
-            composable(Routes.QUIENES_SOMOS){
-                QuienesSomosScreen(navController = navController)
-            }
-            composable(Routes.GESTIONAR_MASCOTAS){
-                val factory = GestionarMascotasViewModelFactory(mascotaDao)
-                val viewModel: GestionarMascotasViewModel = viewModel(factory = factory)
-                GestionarMascotasScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
-            }
-
-            composable(Routes.AGREGAR_MASCOTA_SCREEN){
-                val factory = AgregarMascotaViewModelFactory(mascotaDao)
-                val viewModel: AgregarMascotaViewModel = viewModel(factory = factory)
-                AgregarMascotaScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
-            }
-
-            composable(Routes.HISTORIAL){
-                val factory = HistorialViewModelFactory(reservaDao)
-                val viewModel: HistorialViewModel = viewModel(factory = factory)
-                HistorialScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
+                if (currentUserId != null) {
+                    val factory = ProfileViewModelFactory(usuarioDao, veterinariaDao, promocionUsuarioDao, currentUserId!!)
+                    val vm: ProfileViewModel = viewModel(factory = factory)
+                    PromocionesScreen(navController, vm)
+                }
             }
         }
     }

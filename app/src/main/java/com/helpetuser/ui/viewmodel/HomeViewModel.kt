@@ -6,11 +6,9 @@ import com.helpetuser.data.local.dao.MascotaDao
 import com.helpetuser.data.local.dao.ReservaDao
 import com.helpetuser.model.Mascota
 import com.helpetuser.model.Reserva
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 
+// Clase contenedora para la UI
 data class MascotaConReserva(
     val mascota: Mascota,
     val proximaReserva: Reserva?
@@ -19,36 +17,43 @@ data class MascotaConReserva(
 data class HomeUiState(
     val mascotas: List<MascotaConReserva> = emptyList(),
     val isLoading: Boolean = true,
-    val error: String? = null
+    val error: String? = null // Agregado de nuevo
 )
 
 class HomeViewModel(
     private val mascotaDao: MascotaDao,
-    private val reservaDao: ReservaDao
+    private val reservaDao: ReservaDao,
+    private val usuarioId: Int
 ) : ViewModel() {
-    private val usuarioId = 1
 
-    //flow reactivo
-    //junta el flow de mascotas con el flow de reservas
     private val _uiStateFlow = combine(
         mascotaDao.getByUsuarioId(usuarioId),
         reservaDao.getAll()
-    ) { misMascotas, todasLasReservas ->
-        val mascotasConReservas = misMascotas.map { mascota ->
-            MascotaConReserva(
-                mascota = mascota,
-                proximaReserva = todasLasReservas
-                    .filter { it.mascotaId == mascota.id }
-                    .maxByOrNull { it.fechaHora }
-            )
+    ) { mascotas, todasLasReservas ->
+
+        val mascotasConData = mascotas.map { mascota ->
+            // Buscamos la reserva más próxima para esta mascota
+            val reserva = todasLasReservas
+                .filter { it.mascotaId == mascota.id && it.usuarioId == usuarioId }
+                // Ordenamos por fecha para tomar la más reciente/próxima
+                // Nota: Aquí podrías filtrar solo las futuras si quisieras
+                .maxByOrNull { it.fechaHora }
+
+            MascotaConReserva(mascota, reserva)
         }
-        HomeUiState(mascotas = mascotasConReservas, isLoading = false)
-    }
+
+        HomeUiState(
+            mascotas = mascotasConData,
+            isLoading = false,
+            error = null
+        )
+    }.catch { e ->
+        emit(HomeUiState(isLoading = false, error = e.message ?: "Error desconocido"))
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = HomeUiState()
+    )
 
     val uiState: StateFlow<HomeUiState> = _uiStateFlow
-        .stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
-            HomeUiState(isLoading = true)
-        )
 }

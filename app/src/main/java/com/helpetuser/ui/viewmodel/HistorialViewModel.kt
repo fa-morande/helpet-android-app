@@ -6,7 +6,6 @@ import com.helpetuser.data.local.dao.ReservaDao
 import com.helpetuser.model.Reserva
 import kotlinx.coroutines.flow.*
 
-// uiState para el historial
 data class HistorialUiState(
     val historialReservas: List<Reserva> = emptyList(),
     val isLoading: Boolean = true,
@@ -14,13 +13,11 @@ data class HistorialUiState(
 )
 
 class HistorialViewModel(
-    private val reservaDao: ReservaDao
+    private val reservaDao: ReservaDao,
+    private val usuarioId: Int // <--- ID dinámico recibido
 ) : ViewModel() {
 
-    //se sigue con el user 1
-    private val usuarioId = 1
-
-    //expone el flow del historial mapeado a UiState
+    // Se usa el usuarioId del constructor
     val uiState: StateFlow<HistorialUiState> = reservaDao.getHistorialByUsuarioId(usuarioId)
         .map { reservas ->
             HistorialUiState(historialReservas = reservas, isLoading = false)

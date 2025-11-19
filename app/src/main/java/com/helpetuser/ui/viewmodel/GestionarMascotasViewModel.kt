@@ -14,13 +14,11 @@ data class GestionarMascotasUiState(
 )
 
 class GestionarMascotasViewModel(
-    private val mascotaDao: MascotaDao
+    private val mascotaDao: MascotaDao,
+    private val usuarioId: Int // <--- ID dinámico recibido
 ) : ViewModel() {
 
-    //se sigue con el user 1
-    private val usuarioId = 1
-
-    //expone el flow de mascotas mapeado a UiState
+    // Se usa el usuarioId del constructor
     val uiState: StateFlow<GestionarMascotasUiState> = mascotaDao.getByUsuarioId(usuarioId)
         .map { mascotas ->
             GestionarMascotasUiState(mascotasUsuario = mascotas, isLoading = false)
@@ -32,7 +30,6 @@ class GestionarMascotasViewModel(
             initialValue = GestionarMascotasUiState(isLoading = true)
         )
 
-    //funcion para eliminar la mascota seleccionada
     fun eliminarMascota(mascota: Mascota?) {
         if (mascota == null) return
         viewModelScope.launch {

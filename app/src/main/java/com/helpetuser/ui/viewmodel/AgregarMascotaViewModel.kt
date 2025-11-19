@@ -7,7 +7,8 @@ import com.helpetuser.model.Mascota
 import kotlinx.coroutines.launch
 
 class AgregarMascotaViewModel(
-    private val mascotaDao: MascotaDao
+    private val mascotaDao: MascotaDao,
+    private val usuarioId: Int // <--- ID dinámico recibido
 ) : ViewModel() {
 
     fun agregarMascota(
@@ -17,9 +18,8 @@ class AgregarMascotaViewModel(
         raza: String
     ) {
         viewModelScope.launch {
-            // se crea el objeto Mascota
             val nuevaMascota = Mascota(
-                usuarioId = 1,
+                usuarioId = usuarioId, // <--- ¡Aquí se usa el ID real!
                 nombre = nombre,
                 especie = especie,
                 sexo = "No especificado",
