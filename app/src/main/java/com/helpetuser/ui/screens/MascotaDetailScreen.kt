@@ -81,7 +81,7 @@ fun MascotaDetailScreen(
                         DetailInfoRow(label = "Última Revisión:", value = ultimaReserva?.fechaHora ?: "Ninguna")
                         DetailInfoRow(label = "Última Veterinaria:", value = "pendiente")
 
-                        Spacer(modifier = Modifier.weight(1f))//empuja los botones al fondo
+                        Spacer(modifier = Modifier.weight(1f))
 
                         //botones de accion
                         Row(
@@ -151,6 +151,7 @@ private fun DetailInfoRow(label: String, value: String) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+        // CAMBIO: Usamos 'Divider' en lugar de 'HorizontalDivider' por compatibilidad
+        Divider(modifier = Modifier.padding(horizontal = 16.dp))
     }
 }

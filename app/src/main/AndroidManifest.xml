@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Permisos para Internet y Ubicación -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -17,14 +16,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.HelpetUser">
 
-        <!-- CLAVE DE API DE GOOGLE MAPS -->
-        <!-- IMPORTANTE: Reemplaza 'TU_API_KEY_AQUI' por tu clave real de Google Cloud Console -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="TU_API_KEY_AQUI" />
 
         <activity
-            android:name="com.helpetuser.MainActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.HelpetUser">

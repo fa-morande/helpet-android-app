@@ -134,9 +134,18 @@ fun AppNavigation() {
             }
 
             composable(Routes.SUCURSAL_SCREEN) {
-                val factory = SucursalViewModelFactory(veterinariaDao, sucursalDao)
-                val sucursalViewModel: SucursalViewModel = viewModel(factory = factory)
-                SucursalScreen(navController, sucursalViewModel)
+                // CAMBIO: Usamos MapViewModel y MapScreen en lugar de SucursalScreen
+                val factory = MapViewModelFactory(
+                    sucursalDao = sucursalDao,
+                    veterinariaDao = veterinariaDao,
+                    context = context.applicationContext // Usar applicationContext es más seguro para ViewModels
+                )
+                val mapViewModel: MapViewModel = viewModel(factory = factory)
+
+                MapScreen(
+                    navController = navController,
+                    viewModel = mapViewModel
+                )
             }
 
             composable(Routes.PROFILE_SCREEN) {
